@@ -1,0 +1,80 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mattermost
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  replicas: 2
+  selector:
+    matchLabels:
+      role: mattermost
+  template:
+    metadata:
+      labels:
+        role: mattermost
+    spec:
+      terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: mattermost
+          image: cloudgenius/mattermost
+          imagePullPolicy: Always
+          # resources:
+          #   requests:
+          #     cpu: "300m"
+          #     memory: "256Mi"
+          #   limits:
+          #     cpu: "300m"
+          #     memory: "256Mi"
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+          env:
+            - name: MM_USERNAME
+              value: root
+            - name: MM_PASSWORD
+              value: password
+            - name: MM_DBNAME
+              value: mattermost
+            - name: DB_HOST
+              value: "mysql.default.svc.cluster.local"
+            - name: DB_PORT_NUMBER
+              value: "3306"
+            - name: MM_SQLSETTINGS_DRIVERNAME
+              value: mysql
+          volumeMounts:
+            # name must match the volume name below
+            - name: mattermostconfig
+              mountPath: "/mattermost/config/"
+            - name: mattermostdata
+              mountPath: "/mattermost/data/"
+            - name: mattermostlogs
+              mountPath: "/mattermost/logs/"
+            - name: mattermostplugins
+              mountPath: "/mattermost/plugins/"
+
+      volumes:
+        - name: mattermostconfig
+          persistentVolumeClaim:
+            claimName: mattermostconfig
+        - name: mattermostdata
+          persistentVolumeClaim:
+            claimName: mattermostdata
+        - name: mattermostlogs
+          persistentVolumeClaim:
+            claimName: mattermostlogs
+        - name: mattermostplugins
+          persistentVolumeClaim:
+            claimName: mattermostplugins

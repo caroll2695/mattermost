@@ -1,0 +1,21 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: mattermost
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    #kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  rules:
+    - host: mattermost.carollgeorge.com
+      http:
+        paths:
+          - backend:
+              serviceName: mattermost
+              servicePort: 8000
+            path: /
+  tls:
+    - hosts:
+        - "mattermost.carollgeorge.com"
+      secretName: mattermost-tls
